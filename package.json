@@ -1,0 +1,23 @@
+{
+  "name": "vue-screen-designer",
+  "version": "1.0.0",
+  "description": "超简单的大屏布局设计组件（vue2）",
+  "main": "src/main.js",
+  "directories": {
+    "doc": "doc"
+  },
+  "scripts": {
+    "start": "vite"
+  },
+  "dependencies": {
+    "vue": "^2.7.16"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue2": "^2.3.1",
+    "sass-embedded": "^1.77.8",
+    "vite": "^5.4.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
