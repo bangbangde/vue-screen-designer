@@ -1,11 +1,11 @@
 <template>
-  <div v-if="layout" ref="root" class="screen-item-wrapper" :style="style" :data-index="index" @mousedown="handleMousedown">
-    <template v-if="mode === 'edit' && active">
+  <div v-if="item" ref="root" class="screen-item-wrapper" :style="style" :data-index="index" @mousedown="handleMousedown">
+    <template v-if="active">
       <div class="th-line e"></div>
       <div class="th-line w"></div>
       <div class="th-line s"></div>
       <div class="th-line n"></div>
-      <div v-if="!contentEditing" class="th-mask" data-handle="m"></div>
+      <div v-if="!itemState.editing" class="th-mask" data-handle="m"></div>
       <div
           v-for="item in handles"
           :key="item"
@@ -13,7 +13,7 @@
           :data-handle="item"
       ></div>
     </template>
-    <slot v-bind="{active, editing: contentEditing}"></slot>
+    <slot v-bind:itemState="itemState"></slot>
   </div>
 </template>
 
@@ -22,42 +22,32 @@ export default {
   name: 'ScreenItem',
   props: {
     index: Number,
-    x: Number,
-    y: Number,
-    width: Number,
-    height: Number,
-    z: Number,
-    type: String,
-    focusable: Boolean,
-    active: Boolean,
-    zoom: Number,
+    viewMode: Boolean,
+    zoomLevel: Number,
+    item: Object,
+    activeItem: Object
   },
   data: () => ({
     handles: ['nw', 'ne', 'sw', 'se', 'ms', 'mn', 'me', 'mw'],
-    contentEditing: false
+    itemState: {
+      editing: false,
+    }
   }),
   computed: {
-    layout() {
-      return this.item.layout;
+    active() {
+      return this.activeItem === this.item;
     },
     style() {
+      const {x, y, width, height, z} = this.item.layout;
       return {
-        width: `${this.layout.width}px`,
-        height: `${this.layout.height}px`,
-        transform: `translate(${this.layout.x}px, ${this.layout.y}px)`,
-        zIndex: this.layout.z,
-        cursor: this.mode === 'edit' ? 'grab' : 'auto',
-        '--zoom': this.zoom
+        width: `${width}px`,
+        height: `${height}px`,
+        transform: `translate(${x}px, ${y}px)`,
+        zIndex: z,
+        cursor: this.viewMode ? 'auto' : 'grab',
+        '--zoomLevel': this.zoomLevel
       };
     },
-    contentEditable() {
-      return this.item.type === 'title';
-    },
-  },
-  watch: {
-    active() {
-      this.contentEditing = false;
-    }
   },
   created() {
     this.handleMouseup = this.handleMouseup.bind(this);
@@ -69,8 +59,7 @@ export default {
 
       if (
           this.mode === 'view' ||
-          this.item.focusable === false ||
-          (this.contentEditing && !this.startHandle)
+          this.item.config.focusable === false
       ) {
         return;
       }
@@ -84,17 +73,17 @@ export default {
         this.startHandle = 'm';
       }
       this.transformType = this.startHandle === 'm' ? 'move' : 'resize';
-      this.startLayout = {...this.layout};
-      this.newLayout = {...this.layout};
+      this.startLayout = {...this.item.layout};
+      this.newLayout = {...this.item.layout};
       this.startX = ev.clientX;
       this.startY = ev.clientY;
-      this.$emit(`transformStart`, {type: this.transformType});
     },
     handleMousemove(ev) {
       let diffX, diffY, x, y, width, height;
+      const zoom = this.zoomLevel / 100;
 
-      diffX = (ev.clientX - this.startX) / state.zoom * 100;
-      diffY = (ev.clientY - this.startY) / state.zoom * 100;
+      diffX = (ev.clientX - this.startX) / zoom;
+      diffY = (ev.clientY - this.startY) / zoom;
 
       switch (this.startHandle) {
         case 'nw':
@@ -198,14 +187,14 @@ export default {
           break;
       }
       this.item.layout = this.newLayout;
-      this.$emit('transform', {type: this.transformType, layout: this.newLayout});
+      this.$emit('layout', {index: this.index, type: this.transformType, layout: this.newLayout});
     },
     handleMouseup(ev) {
       const handleClick = () => {
-        if (this.active && this.contentEditable) {
-          this.contentEditing = true;
+        this.$emit('update:activeItem', this.item);
+        if (this.active && this.item.config.editable) {
+          this.itemState.editing = true;
         }
-        // state.activeItem = this.sid;
       }
 
       document.removeEventListener('mouseup', this.handleMouseup);
@@ -220,7 +209,7 @@ export default {
         return;
       }
 
-      this.$emit(`transformEnd`, {
+      this.$emit(`layoutEnd`, {
         type: this.transformType,
         index: this.index,
         layout: this.newLayout,
@@ -254,14 +243,14 @@ export default {
       left: calc(var(--pointRadius) / 4);
       right: calc(var(--pointRadius) / 4);
       height: var(--lineHeight);
-      transform: scale(1, calc(1 / var(--zoom) * 100));
+      transform: scale(1, calc(1 / var(--zoomLevel) * 100));
     }
 
     &.w, &.e {
       width: var(--lineHeight);
       top: calc(var(--pointRadius) / 4);
       bottom: calc(var(--pointRadius) / 4);
-      transform: scale(calc(1 / var(--zoom) * 100), 1);
+      transform: scale(calc(1 / var(--zoomLevel) * 100), 1);
     }
 
     &.n {
@@ -303,7 +292,7 @@ export default {
       height: var(--pointRadius);
       border-radius: 50%;
       border: calc(var(--pointRadius) / 4) solid transparent;
-      transform: scale(calc(1 / var(--zoom) * 100));
+      transform: scale(calc(1 / var(--zoomLevel) * 100));
       background-clip: content-box;
     }
 

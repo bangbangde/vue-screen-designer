@@ -2,18 +2,20 @@
   <div class="design-board">
     <svg class="bg"><defs><pattern id="dots" x="0" y="0" width="30" height="30" patternUnits="userSpaceOnUse"><circle fill="#42454F" cx="12" cy="12" r="2"></circle></pattern></defs><rect x="0" y="0" width="100%" height="100%" fill="url(#dots)"></rect></svg>
 
-    <div class="pan-zoom-container" ref="container" @wheel="handleWheel" @mousedown="onContainerMousedown">
+    <div class="pan-zoom-container" ref="container" @wheel="handleWheel">
       <div class="design-area" :style="designAreaStyle">
         <ScreenItem
-            v-for="(item, index) in content"
-            :key="item.id"
-            :index="index"
-            :item="item"
-            ref="screenItem"
-            @transformEnd="handleTransformEnd"
+          ref="screenItems"
+          v-for="(item, index) in items"
+          :key="item.id"
+          :index="index"
+          :item="item"
+          :activeItem.sync="activeItem"
+          :zoomLevel="zoomLevel"
+          :viewMode="viewMode"
         >
-          <template #default="slotProps">
-            <slot v-bind="{...item, ...slotProps }"></slot>
+          <template #default="itemState">
+            <slot :name="item.type" v-bind="{ index, zoomLevel, viewMode, item, itemState }"></slot>
           </template>
         </ScreenItem>
       </div>
@@ -27,7 +29,6 @@ import MiniMap from './MiniMap.vue'
 import ScreenItem from './ScreenItem.vue'
 import { calculateInitialZoomLevel } from "../helpers";
 
-
 export default {
   name: 'DesignBoard',
   components: {
@@ -36,7 +37,8 @@ export default {
     MiniMap
   },
   props: {
-    content: Array
+    items: Array,
+    viewMode: Boolean
   },
   data: () => ({
     screenSize: [1920, 1080], // 目标屏幕尺寸 [width, height]
@@ -44,7 +46,7 @@ export default {
     margin: [0, 0],           // 设计区域边距 [x, y]（渲染值）
     translate: [0, 0],        // 设计区域平移距离 [x, y]（渲染值）
     zoomLevel: 100,           // 缩放比例 10 - 200
-    activeItemId: null,       // 当前选中的元素的 id
+    activeItem: null,         // 当前选中的元素对象
   }),
   computed: {
     designAreaStyle() {
@@ -125,15 +127,6 @@ export default {
 
       this.zoomLevel = zoomLevel;
       this.translate = newTranslate;
-    },
-    handleTransformEnd({ index, layout }) {
-      console.log('handleTransformEnd', index, layout);
-      this.emit('update-layout', { index, layout });
-    },
-    onContainerMousedown(e) {
-      if (!getAncestorWithClass(e.target, 'screen-item-wrapper')) {
-        state.activeItem = null;
-      }
     },
     emit(name, payload) {
       this.$emit('emit', {name, payload});
