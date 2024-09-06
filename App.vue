@@ -1,14 +1,16 @@
 <template>
-  <DesignBoard :items="items">
-    <template #text="{ item }">
-      <div class="screen-comp screen-comp-text">
-        {{ item.params.content }}
-      </div>
-    </template>
-    <template #image="{ item }">
-      <img class="screen-comp screen-comp-image" :src="item.params.src" />
-    </template>
-  </DesignBoard>
+  <div class="vsd-demo">
+    <DesignBoard :items="items" ref="designBoard">
+      <template #text="{ item }">
+        <div class="screen-comp screen-comp-text">
+          {{ item.params.content }}
+        </div>
+      </template>
+      <template #image="{ item }">
+        <img class="screen-comp screen-comp-image" :src="item.params.src" />
+      </template>
+    </DesignBoard>
+  </div>
 </template>
 
 <script>
@@ -29,6 +31,11 @@ export default {
 </script>
 
 <style lang="scss">
+.vsd-demo {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
 .screen-comp {
   background-color: gainsboro;
   width: 100%;
