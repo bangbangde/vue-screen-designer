@@ -30,14 +30,11 @@ function drawVerticalNumbers(ctx, numbers, x, y) {
 
 function drawTicks(ctx, options) {
   const {
-    zoom,
     scale,
     vertical,
     minTickLabel,
     fontSize,
     translate,
-    minTickCeil,
-    minTick,
     maxTick,
     interval,
     tickLength,
@@ -127,16 +124,16 @@ export default {
   watch: {
     stateX: {
       deep: true,
-      handler(v) {
+      handler() {
         this.drawTicks();
       }
     },
     stateY: {
       deep: true,
-      handler(v) {
+      handler() {
         this.drawTicks(true);
       }
-    }
+    },
   },
   created() {
     this.handleResize = this.handleResize.bind(this);
@@ -189,13 +186,10 @@ export default {
 
       drawTicks(ctx, {
         vertical,
-        zoom,
         scale,
         minTickLabel,
         fontSize,
         translate,
-        minTickCeil,
-        minTick,
         maxTick,
         interval,
         tickLength,

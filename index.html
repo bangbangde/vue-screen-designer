@@ -19,10 +19,12 @@
     <div id="app"></div>
     <script type="module">
       import Vue from 'vue';
+      import App from './App.vue';
+      import * as DesignBoard from "./src/main.js";
 
-      Vue.component('AsyncApp', () => import('./App.vue'));
+      DesignBoard.install(Vue);
       new Vue({
-        render: h => h('AsyncApp')
+        render: h => h(App)
       }).$mount('#app');
     </script>
 </body>
